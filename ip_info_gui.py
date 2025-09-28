@@ -13,7 +13,7 @@ def fetch_ip_info():
 
 def show_ip_info():
     data = fetch_ip_info()
-    text_box.delete("1.0", tk.END)  # clear previous content
+    text_box.delete("1.0", tk.END) 
 
     if "error" in data:
         text_box.insert(tk.END, f"Error: {data['error']}")
@@ -33,7 +33,6 @@ def show_ip_info():
 
     text_box.insert(tk.END, "\n".join([line for line in lines if line]))
 
-# Build GUI
 root = tk.Tk()
 root.title("Public IP Information")
 root.geometry("400x300")
