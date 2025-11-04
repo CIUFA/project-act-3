@@ -1,46 +1,69 @@
-import tkinter as tk
+from flask import Flask, render_template, jsonify
 import requests
 
-API_URL = "https://ipapi.co/json/"
+app = Flask(__name__)
 
-def fetch_ip_info():
+# --- IP APIs ---
+API_ENDPOINTS = {
+    "ipapi": "https://ipapi.co/json/",
+    "ipify": "https://api64.ipify.org?format=json",
+    "ipwhois": "https://ipwho.is/"
+}
+
+# --- Helper Functions ---
+def fetch_from_api(url):
     try:
-        resp = requests.get(API_URL, timeout=5)
+        resp = requests.get(url, timeout=5)
         resp.raise_for_status()
         return resp.json()
     except Exception as e:
         return {"error": str(e)}
 
-def show_ip_info():
-    data = fetch_ip_info()
-    text_box.delete("1.0", tk.END) 
+def merge_ip_data(*data_sources):
+    merged = {}
+    for data in data_sources:
+        if not isinstance(data, dict):
+            continue
+        for key, value in data.items():
+            if value and key not in merged:
+                merged[key] = value
+    return merged
 
-    if "error" in data:
-        text_box.insert(tk.END, f"Error: {data['error']}")
-        return
-    
-    lines = [
-        f"IP Address: {data.get('ip')}",
-        f"City: {data.get('city')}",
-        f"Region: {data.get('region')}",
-        f"Country: {data.get('country_name')} ({data.get('country')})",
-        f"Postal: {data.get('postal')}",
-        f"Latitude/Longitude: {data.get('latitude')}, {data.get('longitude')}",
-        f"Timezone: {data.get('timezone')}",
-        f"Org/ISP: {data.get('org')}",
-        f"ASN: {data.get('asn')}"
-    ]
+def fetch_ip_data():
+    ipify_data = fetch_from_api(API_ENDPOINTS["ipify"])
+    ip_address = ipify_data.get("ip")
 
-    text_box.insert(tk.END, "\n".join([line for line in lines if line]))
+    ipapi_data = fetch_from_api(API_ENDPOINTS["ipapi"])
+    ipwhois_data = fetch_from_api(API_ENDPOINTS["ipwhois"] + (ip_address or ""))
 
-root = tk.Tk()
-root.title("Public IP Information")
-root.geometry("400x300")
+    merged_data = merge_ip_data(ipify_data, ipapi_data, ipwhois_data)
+    return merged_data
 
-btn = tk.Button(root, text="Get IP Info", command=show_ip_info)
-btn.pack(pady=10)
+# --- Routes ---
+@app.route("/")
+def index():
+    return render_template("index.html")
 
-text_box = tk.Text(root, wrap="word", height=12, width=45)
-text_box.pack(padx=10, pady=10)
+@app.route("/ipinfo")
+def ipinfo():
+    data = fetch_ip_data()
+    # Filter important keys for display
+    important_keys = {
+        "IP Address": data.get("ip"),
+        "City": data.get("city"),
+        "Region": data.get("region") or data.get("regionName"),
+        "Country": f"{data.get('country_name') or data.get('country')} ({data.get('country_code') or data.get('country_code_iso3')})",
+        "Postal": data.get("postal"),
+        "Latitude/Longitude": f"{data.get('latitude') or data.get('lat')}, {data.get('longitude') or data.get('lon')}",
+        "Timezone": data.get("timezone"),
+        "Organization": data.get("org"),
+        "ASN": data.get("asn"),
+        "IP Version": "IPv6" if ":" in str(data.get("ip")) else "IPv4",
+    }
+    # Remove empty values
+    filtered_data = {k: v for k, v in important_keys.items() if v}
+    return jsonify(filtered_data)
 
-root.mainloop()
+# --- Run App ---
+if __name__ == "__main__":
+    app.run(debug=True)

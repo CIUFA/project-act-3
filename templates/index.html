@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Public IP Information</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-sA+0C7Vb3MXw/ULC2zZrJx8IY3H+Hea5s0X0j3F3nPs="
+          crossorigin=""/>
+
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #f0f4f7; 
+            margin: 0; 
+            padding: 0; 
+        }
+
+        header {
+            background: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 20px auto;
+            display: block;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1976D2;
+        }
+
+        #ipInfo {
+            background-color: #ffffff;
+            padding: 20px;
+            margin: 10px auto;
+            width: 80%;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+            white-space: pre-wrap;
+        }
+
+        #map {
+            height: 400px;
+            width: 80%;
+            margin: 20px auto;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Public IP Information & Location Tracker</h1>
+    </header>
+
+    <button onclick="getIPInfo()">Get IP Info</button>
+    <pre id="ipInfo">Click the button to fetch IP info...</pre>
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-o8Y0p2Y0A7+fFsYCLoGZCO1lJ10t1PvbNwD9bNm/uu0="
+            crossorigin=""></script>
+
+    <script>
+        let map;
+        let marker;
+
+        function initMap(lat=0, lon=0) {
+            if (!map) {
+                map = L.map('map').setView([lat, lon], 5);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
+
+                marker = L.marker([lat, lon]).addTo(map)
+                    .bindPopup('Your IP Location')
+                    .openPopup();
+            } else {
+                map.setView([lat, lon], 5);
+                marker.setLatLng([lat, lon]);
+            }
+        }
+
+        function getIPInfo() {
+            fetch("/ipinfo")
+                .then(response => response.json())
+                .then(data => {
+                    let output = "";
+                    for (let key in data) {
+                        output += `${key}: ${data[key]}\n`;
+                    }
+                    document.getElementById("ipInfo").textContent = output;
+
+                    // Update map if latitude/longitude is available
+                    if (data["Latitude/Longitude"]) {
+                        let coords = data["Latitude/Longitude"].split(",").map(Number);
+                        initMap(coords[0], coords[1]);
+                    }
+                })
+                .catch(err => {
+                    document.getElementById("ipInfo").textContent = "Error fetching IP info.";
+                    console.error(err);
+                });
+        }
+
+        // Initialize map with default coordinates (0,0)
+        initMap();
+    </script>
+</body>
+</html>
