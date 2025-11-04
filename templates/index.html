@@ -2,27 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Public IP Information</title>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-          integrity="sha256-sA+0C7Vb3MXw/ULC2zZrJx8IY3H+Hea5s0X0j3F3nPs="
-          crossorigin=""/>
-
+    <title>Public IP Information & Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            background: #f0f4f7; 
-            margin: 0; 
-            padding: 0; 
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f4f7;
+            margin: 0;
+            padding: 0;
         }
-
         header {
             background: #4CAF50;
             color: white;
             padding: 20px;
             text-align: center;
         }
-
         button {
             padding: 10px 20px;
             font-size: 16px;
@@ -34,24 +28,22 @@
             border-radius: 5px;
             cursor: pointer;
         }
-
         button:hover {
             background: #1976D2;
         }
-
         #ipInfo {
             background-color: #ffffff;
             padding: 20px;
             margin: 10px auto;
-            width: 80%;
+            width: 85%;
             border-radius: 10px;
             box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
             white-space: pre-wrap;
+            font-size: 14px;
         }
-
         #map {
-            height: 400px;
-            width: 80%;
+            height: 450px;
+            width: 85%;
             margin: 20px auto;
             border-radius: 10px;
             box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
@@ -59,64 +51,92 @@
     </style>
 </head>
 <body>
-    <header>
-        <h1>Public IP Information & Location Tracker</h1>
-    </header>
 
-    <button onclick="getIPInfo()">Get IP Info</button>
-    <pre id="ipInfo">Click the button to fetch IP info...</pre>
-    <div id="map"></div>
+<header>
+    <h1>Public IP Information & Location Tracker</h1>
+</header>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-            integrity="sha256-o8Y0p2Y0A7+fFsYCLoGZCO1lJ10t1PvbNwD9bNm/uu0="
-            crossorigin=""></script>
+<button onclick="getIPInfo()">Get IP Info</button>
 
-    <script>
-        let map;
-        let marker;
+<pre id="ipInfo">Click the button to fetch IP info...</pre>
 
-        function initMap(lat=0, lon=0) {
-            if (!map) {
-                map = L.map('map').setView([lat, lon], 5);
+<div id="map"></div>
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; OpenStreetMap contributors'
-                }).addTo(map);
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+    // Initialize map at default location
+    const map = L.map('map').setView([0, 0], 2);
 
-                marker = L.marker([lat, lon]).addTo(map)
-                    .bindPopup('Your IP Location')
-                    .openPopup();
-            } else {
+    // Load OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // Marker variable
+    let marker;
+
+    function getIPInfo() {
+        fetch("/ipinfo")
+            .then(response => response.json())
+            .then(data => {
+                const isRealData = !(parseFloat(data.Latitude) === 0 && parseFloat(data.Longitude) === 0);
+
+                // Display info in the panel
+                let output = `
+IPv4 Address: ${data["IPv4 Address"] || "N/A"}
+IPv6 Address: ${data["IPv6 Address"] || "N/A"}
+City: ${data.City || "N/A"}
+Region: ${data.Region || "N/A"}
+Country: ${data.Country || "N/A"} (${data["Country Code"] || "N/A"})
+Postal: ${data.Postal || "N/A"}
+Latitude/Longitude: ${data.Latitude || "N/A"}, ${data.Longitude || "N/A"}
+Timezone: ${data.Timezone || "N/A"}
+Organization: ${data.Organization || "N/A"}
+ASN: ${data.ASN || "N/A"}
+Data Status: ${isRealData ? "Real Data" : "Fallback Data"}
+                `;
+                document.getElementById("ipInfo").textContent = output;
+
+                // Update map marker
+                const lat = parseFloat(data.Latitude);
+                const lon = parseFloat(data.Longitude);
+                const infoContent = `
+IPv4: ${data["IPv4 Address"] || "N/A"}<br>
+IPv6: ${data["IPv6 Address"] || "N/A"}<br>
+ASN: ${data.ASN || "N/A"}<br>
+Org: ${data.Organization || "N/A"}<br>
+Status: ${isRealData ? "Real Data" : "Fallback Data"}
+                `;
+
+                if (marker) {
+                    marker.setLatLng([lat, lon]);
+                    marker.bindPopup(infoContent).openPopup();
+                } else {
+                    const iconColor = isRealData ? 'green' : 'red';
+                    const icon = L.icon({
+                        iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${iconColor}.png`,
+                        shadowUrl: 'https://unpkg.com/leaflet/dist/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    });
+
+                    marker = L.marker([lat, lon], {icon: icon})
+                        .addTo(map)
+                        .bindPopup(infoContent)
+                        .openPopup();
+                }
+
                 map.setView([lat, lon], 5);
-                marker.setLatLng([lat, lon]);
-            }
-        }
+            })
+            .catch(err => {
+                document.getElementById("ipInfo").textContent = "Error fetching IP info.";
+                console.error(err);
+            });
+    }
+</script>
 
-        function getIPInfo() {
-            fetch("/ipinfo")
-                .then(response => response.json())
-                .then(data => {
-                    let output = "";
-                    for (let key in data) {
-                        output += `${key}: ${data[key]}\n`;
-                    }
-                    document.getElementById("ipInfo").textContent = output;
-
-                    // Update map if latitude/longitude is available
-                    if (data["Latitude/Longitude"]) {
-                        let coords = data["Latitude/Longitude"].split(",").map(Number);
-                        initMap(coords[0], coords[1]);
-                    }
-                })
-                .catch(err => {
-                    document.getElementById("ipInfo").textContent = "Error fetching IP info.";
-                    console.error(err);
-                });
-        }
-
-        // Initialize map with default coordinates (0,0)
-        initMap();
-    </script>
 </body>
 </html>
