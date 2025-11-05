@@ -2,78 +2,150 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Public IP Information & Map</title>
+    <title>IP Intelligence & Geolocation Tracker</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f0f4f7;
+        /* 🌈 Global Design Reset */
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
+        body {
+            font-family: "Poppins", sans-serif;
+            background: linear-gradient(135deg, #5fa1f1, #fff);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        /* 🌟 Header */
         header {
-            background: #4CAF50;
-            color: white;
-            padding: 20px;
             text-align: center;
+            padding: 30px;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
+        header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        header p {
+            font-size: 0.9rem;
+            color: #f0f0f0;
+        }
+
+        /* 🔘 Button */
         button {
-            padding: 10px 20px;
+            padding: 12px 28px;
             font-size: 16px;
-            margin: 20px auto;
             display: block;
-            background: #2196F3;
+            margin: 30px auto;
             color: white;
+            background: linear-gradient(90deg, #00b09b, #96c93d);
             border: none;
-            border-radius: 5px;
+            border-radius: 30px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             cursor: pointer;
+            transition: all 0.3s ease;
         }
         button:hover {
-            background: #1976D2;
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.25);
         }
+
+        /* 📊 Layout Wrapper */
+        .content-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            width: 90%;
+            margin: 0 auto 50px auto;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+
+        /* 🧾 IP Info Card */
         #ipInfo {
-            background-color: #ffffff;
-            padding: 20px;
-            margin: 10px auto;
-            width: 85%;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+            flex: 1;
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(8px);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
             white-space: pre-wrap;
-            font-size: 14px;
+            font-size: 15px;
+            height: 460px;
+            overflow-y: auto;
+            transition: transform 0.2s ease;
         }
+        #ipInfo:hover {
+            transform: scale(1.01);
+        }
+
+        /* 🗺️ Map Section */
         #map {
-            height: 450px;
-            width: 85%;
-            margin: 20px auto;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+            flex: 1.2;
+            height: 460px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            overflow: hidden;
+            transition: transform 0.2s ease;
+        }
+        #map:hover {
+            transform: scale(1.01);
+        }
+
+        /* 🧠 Footer */
+        footer {
+            text-align: center;
+            padding: 15px;
+            color: #fff;
+            font-size: 0.9rem;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        /* 📱 Responsive */
+        @media (max-width: 900px) {
+            .content-wrapper {
+                flex-direction: column;
+                align-items: center;
+            }
+            #ipInfo, #map {
+                width: 100%;
+                height: 400px;
+            }
         }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>Public IP Information & Location Tracker</h1>
+    <h1>🌐 IP Intelligence & Geolocation Tracker</h1>
+    <p>A final-year project showcasing real-time IP lookups and mapping visualization</p>
 </header>
 
-<button onclick="getIPInfo()">Get IP Info</button>
+<button onclick="getIPInfo()">🔍 Get My IP Info</button>
 
-<pre id="ipInfo">Click the button to fetch IP info...</pre>
-
-<div id="map"></div>
+<div class="content-wrapper">
+    <pre id="ipInfo">Click “Get My IP Info” to retrieve your network data...</pre>
+    <div id="map"></div>
+</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-    // Initialize map at default location
+    // Initialize the map
     const map = L.map('map').setView([0, 0], 2);
 
-    // Load OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Use a soft light basemap
+    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        attribution: '© OpenStreetMap'
+        attribution: '© OpenStreetMap contributors'
     }).addTo(map);
-
-    // Marker variable
+    //pa add ako ng bago
     let marker;
 
     function getIPInfo() {
@@ -81,48 +153,45 @@
             .then(response => response.json())
             .then(data => {
                 const isRealData = !(parseFloat(data.Latitude) === 0 && parseFloat(data.Longitude) === 0);
-
-                // Display info in the panel
-                let output = `
-IPv4 Address: ${data["IPv4 Address"] || "N/A"}
-IPv6 Address: ${data["IPv6 Address"] || "N/A"}
-City: ${data.City || "N/A"}
-Region: ${data.Region || "N/A"}
-Country: ${data.Country || "N/A"} (${data["Country Code"] || "N/A"})
-Postal: ${data.Postal || "N/A"}
-Latitude/Longitude: ${data.Latitude || "N/A"}, ${data.Longitude || "N/A"}
-Timezone: ${data.Timezone || "N/A"}
-Organization: ${data.Organization || "N/A"}
-ASN: ${data.ASN || "N/A"}
-Data Status: ${isRealData ? "Real Data" : "Fallback Data"}
-                `;
-                document.getElementById("ipInfo").textContent = output;
-
-                // Update map marker
                 const lat = parseFloat(data.Latitude);
                 const lon = parseFloat(data.Longitude);
+
+                const output = `
+🌎 IPv4: ${data["IPv4 Address"] || "N/A"}
+🧭 IPv6: ${data["IPv6 Address"] || "N/A"}
+🏙️ City: ${data.City || "N/A"}
+📍 Region: ${data.Region || "N/A"}
+🌐 Country: ${data.Country || "N/A"} (${data["Country Code"] || "N/A"})
+🏤 Postal: ${data.Postal || "N/A"}
+🗺️ Coordinates: ${lat}, ${lon}
+⏰ Timezone: ${data.Timezone || "N/A"}
+🏢 Organization: ${data.Organization || "N/A"}
+💻 ASN: ${data.ASN || "N/A"}
+⚡ IP Type: ${data["IP Version"] || "N/A"}
+📶 Data Status: ${isRealData ? "✅ Real Data" : "⚠️ Fallback Data"}
+                `;
+
+                document.getElementById("ipInfo").textContent = output;
+
                 const infoContent = `
-IPv4: ${data["IPv4 Address"] || "N/A"}<br>
-IPv6: ${data["IPv6 Address"] || "N/A"}<br>
-ASN: ${data.ASN || "N/A"}<br>
-Org: ${data.Organization || "N/A"}<br>
-Status: ${isRealData ? "Real Data" : "Fallback Data"}
+<b>IPv4:</b> ${data["IPv4 Address"] || "N/A"}<br>
+<b>IPv6:</b> ${data["IPv6 Address"] || "N/A"}<br>
+<b>Org:</b> ${data.Organization || "N/A"}<br>
+<b>ASN:</b> ${data.ASN || "N/A"}
                 `;
 
                 if (marker) {
                     marker.setLatLng([lat, lon]);
                     marker.bindPopup(infoContent).openPopup();
                 } else {
-                    const iconColor = isRealData ? 'green' : 'red';
                     const icon = L.icon({
-                        iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${iconColor}.png`,
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
                         shadowUrl: 'https://unpkg.com/leaflet/dist/images/marker-shadow.png',
                         iconSize: [25, 41],
                         iconAnchor: [12, 41],
                         popupAnchor: [1, -34],
                         shadowSize: [41, 41]
                     });
-
                     marker = L.marker([lat, lon], {icon: icon})
                         .addTo(map)
                         .bindPopup(infoContent)
@@ -132,7 +201,7 @@ Status: ${isRealData ? "Real Data" : "Fallback Data"}
                 map.setView([lat, lon], 5);
             })
             .catch(err => {
-                document.getElementById("ipInfo").textContent = "Error fetching IP info.";
+                document.getElementById("ipInfo").textContent = "⚠️ Error fetching IP info. Please try again.";
                 console.error(err);
             });
     }
