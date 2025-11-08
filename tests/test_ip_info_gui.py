@@ -8,6 +8,10 @@ def test_fetch_ip_data_returns_dict():
 
 def test_fetch_ip_data_has_required_keys():
     data = fetch_ip_data()
-    required_keys = ["IPv4 Address", "IPv6 Address", "City", "Region", "Country"]
+    required_keys = [
+        "IPv4 Address", "IPv6 Address", "City", "Region", "Country",
+        "Country Code", "Postal", "Latitude", "Longitude", "Timezone",
+        "Organization", "ASN"
+    ]
     for key in required_keys:
         assert key in data
