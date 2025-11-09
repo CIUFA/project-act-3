@@ -17,10 +17,10 @@ pipeline {
         stage('Setup Python') {
             steps {
                 bat """
-                python -m venv "%VENV_DIR%"
+                "C:\\Program Files\\Python313\\python.exe" -m venv "%VENV_DIR%"
                 call "%VENV_DIR%\\Scripts\\activate"
-                python -m pip install --upgrade pip
-                python -m pip install -r requirements.txt
+                "C:\\Program Files\\Python313\\python.exe" -m pip install --upgrade pip
+                "C:\\Program Files\\Python313\\python.exe" -m pip install -r requirements.txt
                 """
             }
         }
@@ -30,7 +30,7 @@ pipeline {
                 bat """
                 call "%VENV_DIR%\\Scripts\\activate"
                 set PYTHONPATH=%CD%
-                pytest --junitxml=results.xml
+                "%VENV_DIR%\\Scripts\\python.exe" -m pytest --junitxml=results.xml
                 """
             }
         }
