@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        python 'Python313' // Must match the name configured in Jenkins Global Tool Configuration
+        python 'Python313' // must match the name in Jenkins Global Tool Configuration
     }
 
     environment {
@@ -20,10 +20,9 @@ pipeline {
 
         stage('Setup Python') {
             steps {
-                // Create virtual environment and install dependencies
                 bat """
-                python -m venv %VENV_DIR%
-                call %VENV_DIR%\\Scripts\\activate
+                python -m venv "%VENV_DIR%"
+                call "%VENV_DIR%\\Scripts\\activate"
                 python -m pip install --upgrade pip
                 python -m pip install -r requirements.txt
                 """
@@ -32,21 +31,17 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                script {
-                    def commands = """
-                    call venv\\Scripts\\activate
-                    set PYTHONPATH=%CD%
-                    pytest --junitxml=results.xml
-                    """
-                    bat commands
-                }
+                bat """
+                call "%VENV_DIR%\\Scripts\\activate"
+                set PYTHONPATH=%CD%
+                pytest --junitxml=results.xml
+                """
             }
         }
-
+    }
 
     post {
         always {
-            // Record test results
             junit 'results.xml'
         }
         success {
