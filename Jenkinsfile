@@ -18,9 +18,8 @@ pipeline {
             steps {
                 bat """
                 "C:\\Program Files\\Python313\\python.exe" -m venv "%VENV_DIR%"
-                call "%VENV_DIR%\\Scripts\\activate"
-                "C:\\Program Files\\Python313\\python.exe" -m pip install --upgrade pip
-                "C:\\Program Files\\Python313\\python.exe" -m pip install -r requirements.txt
+                "%VENV_DIR%\\Scripts\\python.exe" -m pip install --upgrade pip
+                "%VENV_DIR%\\Scripts\\python.exe" -m pip install -r "%WORKSPACE%\\requirements.txt"
                 """
             }
         }
@@ -28,9 +27,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 bat """
-                call "%VENV_DIR%\\Scripts\\activate"
-                set PYTHONPATH=%CD%
-                "%VENV_DIR%\\Scripts\\python.exe" -m pytest --junitxml=results.xml
+                "%VENV_DIR%\\Scripts\\python.exe" -m pytest --junitxml="%WORKSPACE%\\results.xml"
                 """
             }
         }
