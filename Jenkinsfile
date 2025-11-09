@@ -1,6 +1,14 @@
 pipeline {
     agent any
 
+    tools {
+        python 'Python313' // must match the name in Jenkins Global Tool Configuration
+    }
+
+    environment {
+        VENV_DIR = "${WORKSPACE}\\venv"
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -12,22 +20,22 @@ pipeline {
 
         stage('Setup Python') {
             steps {
-                bat '''
-                python -m venv venv
-                call venv\\Scripts\\activate
-                pip install --upgrade pip
-                pip install -r requirements.txt
-                '''
+                bat """
+                python -m venv "%VENV_DIR%"
+                call "%VENV_DIR%\\Scripts\\activate"
+                python -m pip install --upgrade pip
+                python -m pip install -r requirements.txt
+                """
             }
         }
 
         stage('Run Tests') {
             steps {
-                bat '''
-                call venv\\Scripts\\activate
+                bat """
+                call "%VENV_DIR%\\Scripts\\activate"
                 set PYTHONPATH=%CD%
                 pytest --junitxml=results.xml
-                '''
+                """
             }
         }
     }
