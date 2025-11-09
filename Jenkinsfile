@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        python 'Python313' // must match the name in Jenkins Global Tool Configuration
-    }
-
     environment {
         VENV_DIR = "${WORKSPACE}\\venv"
     }
